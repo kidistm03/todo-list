@@ -1,11 +1,10 @@
-# 📝 Advanced Todo List — Nexus Bootcamp Project 6
+# Advanced Todo List — Nexus Bootcamp Project 6
 
 A fully functional Todo List app with multiple projects, priorities, and localStorage persistence.
-Built with HTML, CSS, Vanilla JavaScript, and bundled with Webpack.
+Built with HTML, CSS, JavaScript, and bundled with Webpack.
 
----
 
-## 🚀 How to Run Locally
+## How to Run Locally
 
 ### 1. Install dependencies
 ```bash
@@ -47,9 +46,8 @@ todo-list/
 └── README.md
 ```
 
----
 
-## ✅ Features
+## Features
 
 - Create, view, edit, delete **todos** with title, description, due date, priority, notes
 - Support for **multiple projects** — create and switch between them
