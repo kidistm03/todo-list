@@ -1,80 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Advanced Todo List</title>
-  </head>
-  <body>
+    </head>
+<body>
 
-    <!-- ===== TOP NAVIGATION BAR ===== -->
     <header class="header">
-      <h1>📝 My Todo App</h1>
+        <div class="header-left">
+            <button id="menu-toggle" aria-label="Toggle Menu">☰</button>
+            <div class="logo">
+                <span class="logo-icon">✅</span>
+                <h1>WhatToDo</h1>
+            </div>
+        </div>
+        <div class="header-right">
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
     </header>
 
-    <!-- ===== MAIN LAYOUT: sidebar + content ===== -->
     <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <section class="nav-section">
+                <h2>Home</h2>
+                <ul id="default-categories">
+                    <li data-category="all" class="active">📂 All Tasks</li>
+                    <li data-category="today">📅 Today</li>
+                    <li data-category="week">🗓️ Next 7 Days</li>
+                    <li data-category="important">⭐ Important</li>
+                </ul>
+            </section>
 
-      <!-- LEFT SIDEBAR: Project list -->
-      <aside class="sidebar">
-        <h2>Projects</h2>
+            <hr>
 
-        <!-- This list will be filled by JavaScript -->
-        <ul id="project-list"></ul>
+            <section class="projects-section">
+                <h2>Projects</h2>
+                <ul id="project-list"></ul>
 
-        <!-- Button to add a new project -->
-        <button id="add-project-btn">+ New Project</button>
+                <button id="add-project-btn" class="text-btn">+ Add Project</button>
+                
+                <div id="new-project-form" class="hidden">
+                    <input type="text" id="new-project-name" placeholder="Project name..." />
+                    <div class="form-actions">
+                        <button id="save-project-btn">Add</button>
+                        <button id="cancel-project-btn">Cancel</button>
+                    </div>
+                </div>
+            </section>
+        </aside>
 
-        <!-- Form to enter a new project name (hidden by default) -->
-        <div id="new-project-form" class="hidden">
-          <input type="text" id="new-project-name" placeholder="Project name..." />
-          <button id="save-project-btn">Save</button>
-          <button id="cancel-project-btn">Cancel</button>
-        </div>
-      </aside>
+        <main class="main-content">
+            <header class="content-header">
+                <h2 id="current-project-title">All Tasks</h2>
+                <button id="add-todo-btn" class="primary-btn">+ Add Task</button>
+            </header>
 
-      <!-- RIGHT MAIN AREA: Todos for the selected project -->
-      <main class="main-content">
-        <!-- Title of the current project -->
-        <h2 id="current-project-title">Select a project</h2>
+            <div id="todo-list-container">
+                </div>
 
-        <!-- Button to add a todo (hidden until a project is selected) -->
-        <button id="add-todo-btn" class="hidden">+ Add Todo</button>
+            <dialog id="todo-modal">
+                <form id="todo-form" method="dialog">
+                    <h3 id="form-title">New Task</h3>
+                    
+                    <div class="input-group">
+                        <label for="todo-title">Title *</label>
+                        <input type="text" id="todo-title" required />
+                    </div>
 
-        <!-- List of todos — filled by JavaScript -->
-        <div id="todo-list"></div>
+                    <div class="input-group">
+                        <label for="todo-desc">Description</label>
+                        <textarea id="todo-desc"></textarea>
+                    </div>
 
-        <!-- ===== ADD / EDIT TODO FORM (hidden by default) ===== -->
-        <div id="todo-form-container" class="hidden">
-          <h3 id="form-title">Add New Todo</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="todo-date">Due Date *</label>
+                            <input type="date" id="todo-date" required />
+                        </div>
+                        <div class="input-group">
+                            <label for="todo-priority">Priority</label>
+                            <select id="todo-priority">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
 
-          <label>Title *</label>
-          <input type="text" id="todo-title" placeholder="What needs to be done?" />
-
-          <label>Description</label>
-          <textarea id="todo-desc" placeholder="More details..."></textarea>
-
-          <label>Due Date *</label>
-          <input type="date" id="todo-date" />
-
-          <label>Priority</label>
-          <select id="todo-priority">
-            <option value="low">🟢 Low</option>
-            <option value="medium">🟡 Medium</option>
-            <option value="high">🔴 High</option>
-          </select>
-
-          <label>Notes (optional)</label>
-          <textarea id="todo-notes" placeholder="Any extra notes..."></textarea>
-
-          <div class="form-buttons">
-            <button id="save-todo-btn">Save Todo</button>
-            <button id="cancel-todo-btn">Cancel</button>
-          </div>
-        </div>
-      </main>
+                    <div class="form-buttons">
+                        <button type="submit" id="save-todo-btn">Save</button>
+                        <button type="button" id="cancel-todo-btn">Cancel</button>
+                    </div>
+                </form>
+            </dialog>
+        </main>
     </div>
 
-    <!-- Webpack will inject the bundled JS file here automatically -->
-  </body>
+</body>
 </html>
