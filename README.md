@@ -24,7 +24,7 @@ The bundled output will be in the `dist/` folder.
 
 ---
 
-## 📁 Folder Structure
+## Folder Structure
 
 ```
 todo-list/
@@ -57,6 +57,3 @@ todo-list/
 - **Responsive** — works on mobile and desktop
 - Bundled with **Webpack**
 
-## 🌐 Deployment
-
-Deploy the `dist/` folder to [Netlify](https://netlify.com) or [Vercel](https://vercel.com).
