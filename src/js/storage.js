@@ -4,32 +4,37 @@
 // localStorage stores data as strings, so we convert to/from JSON.
 // ============================================================
 
-const STORAGE_KEY = "todoAppData"; // The key we use in localStorage
+// storage.js
+// Handles saving to and loading from localStorage (Web Storage API)
+
+const STORAGE_KEY = "whattodo_advanced_app";  // Unique key for this app
 
 /**
- * saveData - Saves all projects and ID counters to localStorage.
- *
- * @param {object} data - The object containing projects and ID counters to save
+ * Save all application data to localStorage.
+ * @param {object} data - Contains projects, projectIdCounter, todoIdCounter
  */
 function saveData(data) {
-  // JSON.stringify converts the object to a string
-  const jsonString = JSON.stringify(data);
-  localStorage.setItem(STORAGE_KEY, jsonString);
+    try {
+        const serialized = JSON.stringify(data);
+        localStorage.setItem(STORAGE_KEY, serialized);
+    } catch (error) {
+        console.error("Failed to save data to localStorage:", error);
+    }
 }
 
 /**
- * loadData - Loads projects and ID counters from localStorage.
- *
- * @returns {object|null} - The saved data object, or null if nothing was saved
+ * Load application data from localStorage.
+ * @returns {object|null} - Parsed data object if exists, otherwise null
  */
 function loadData() {
-  const jsonString = localStorage.getItem(STORAGE_KEY);
-
-  // If nothing was saved yet, return null
-  if (!jsonString) return null;
-
-  // JSON.parse converts the string back to a JavaScript object
-  return JSON.parse(jsonString);
+    try {
+        const serialized = localStorage.getItem(STORAGE_KEY);
+        if (!serialized) return null;
+        return JSON.parse(serialized);
+    } catch (error) {
+        console.error("Failed to load data from localStorage:", error);
+        return null;
+    }
 }
 
 export { saveData, loadData };
