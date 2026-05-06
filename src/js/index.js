@@ -21,15 +21,15 @@ import {
     openTodoModal,
     closeTodoModal,
 } from "./dom.js";
-import { format, parseISO, isValid, isToday, isWithinInterval, addDays } from "date-fns";
+import { parseISO, isValid, isToday, isWithinInterval, addDays } from "date-fns";
 
 // ============================================================
 // APP STATE
 // ============================================================
 
-let projects = [];                // Array of project objects { id, name, todos: [] }
-let activeView = { type: "category", id: "all" };   // 'category' or 'project'
-let editingTodoId = null;         // ID of todo being edited, null if adding new
+let projects = [];
+let activeView = { type: "category", id: "all" };
+let editingTodoId = null;
 
 // ============================================================
 // STORAGE HELPERS
@@ -55,11 +55,10 @@ function loadFromLocalStorage() {
 }
 
 // ============================================================
-// FILTERING LOGIC FOR CATEGORIES
+// FILTERING LOGIC
 // ============================================================
 
 function getAllTodosFlat() {
-    // Flatten all todos from all projects, attach projectName for display
     return projects.flatMap(proj =>
         proj.todos.map(todo => ({ ...todo, projectName: proj.name, projectId: proj.id }))
     );
@@ -71,8 +70,6 @@ function getFilteredTodos() {
         const project = projects.find(p => p.id === activeView.id);
         return project ? project.todos.map(t => ({ ...t, projectName: project.name })) : [];
     }
-
-    // Category filtering
     switch (activeView.id) {
         case "today":
             return allTodos.filter(todo => {
@@ -80,7 +77,7 @@ function getFilteredTodos() {
                 const due = parseISO(todo.dueDate);
                 return isValid(due) && isToday(due);
             });
-        case "week":
+        case "week": {
             const today = new Date();
             const nextWeek = addDays(today, 7);
             return allTodos.filter(todo => {
@@ -88,26 +85,24 @@ function getFilteredTodos() {
                 const due = parseISO(todo.dueDate);
                 return isValid(due) && isWithinInterval(due, { start: today, end: nextWeek });
             });
+        }
         case "important":
             return allTodos.filter(todo => todo.priority === "high");
-        default: // "all"
+        default:
             return allTodos;
     }
 }
 
 // ============================================================
-// RENDER EVERYTHING (UI UPDATE)
+// RENDER
 // ============================================================
 
 function renderAll() {
-    // Render projects in sidebar
     const activeProjectId = (activeView.type === "project") ? activeView.id : null;
     renderProjects(projects, activeProjectId, selectProject, deleteProject);
 
-    // Get todos based on current view
     let todos = getFilteredTodos();
     let title = "";
-
     if (activeView.type === "category") {
         switch (activeView.id) {
             case "all": title = "All Tasks"; break;
@@ -121,16 +116,17 @@ function renderAll() {
         title = project ? project.name : "Tasks";
     }
 
+    // ✅ Done button now deletes the task
     renderTodos(todos, title, {
-        onToggleDone: toggleDone,
+        onToggleDone: deleteTodo,
         onEditTodo: startEditTodo,
         onDeleteTodo: deleteTodo,
     });
 
-    // Update active class for categories sidebar
-    document.querySelectorAll(".category-item").forEach(el => {
-        const viewId = el.dataset.view;
-        if (activeView.type === "category" && activeView.id === viewId) {
+    // Highlight active category
+    document.querySelectorAll("#default-categories li").forEach(el => {
+        const cat = el.dataset.category;
+        if (activeView.type === "category" && activeView.id === cat) {
             el.classList.add("active");
         } else {
             el.classList.remove("active");
@@ -153,7 +149,6 @@ function deleteProject(projectId) {
         return;
     }
     if (!confirm(`Delete project "${projects.find(p => p.id === projectId)?.name}" and all its tasks?`)) return;
-
     projects = projects.filter(p => p.id !== projectId);
     if (activeView.type === "project" && activeView.id === projectId) {
         activeView = { type: "category", id: "all" };
@@ -181,19 +176,6 @@ function addProject() {
 // TODO ACTIONS
 // ============================================================
 
-function toggleDone(todoId) {
-    // Find the todo across all projects
-    for (const project of projects) {
-        const todo = project.todos.find(t => t.id === todoId);
-        if (todo) {
-            todo.done = !todo.done;
-            saveToLocalStorage();
-            renderAll();
-            return;
-        }
-    }
-}
-
 function deleteTodo(todoId) {
     if (!confirm("Delete this task?")) return;
     for (let i = 0; i < projects.length; i++) {
@@ -208,7 +190,6 @@ function deleteTodo(todoId) {
 }
 
 function startEditTodo(todoId) {
-    // Find the full todo object
     let foundTodo = null;
     let foundProjectId = null;
     for (const proj of projects) {
@@ -222,7 +203,6 @@ function startEditTodo(todoId) {
     if (foundTodo) {
         editingTodoId = todoId;
         fillForm(foundTodo);
-        // Populate project dropdown with current project selected
         populateProjectSelect(projects, foundProjectId);
         openTodoModal(true);
     }
@@ -244,33 +224,22 @@ function saveTodoFromModal(title, description, dueDate, priority, notes, project
                 todo.dueDate = dueDate;
                 todo.priority = priority;
                 todo.notes = notes;
-                // If project changed, move the todo
                 if (todo.projectId !== projectId) {
-                    // Remove from current project
                     const index = proj.todos.findIndex(t => t.id === editingTodoId);
                     proj.todos.splice(index, 1);
-                    // Add to target project
                     const targetProject = projects.find(p => p.id === projectId);
-                    if (targetProject) {
-                        const movedTodo = { ...todo, projectId: projectId };
-                        targetProject.todos.push(movedTodo);
-                    }
+                    if (targetProject) targetProject.todos.push({ ...todo, projectId });
                 }
                 break;
             }
         }
     } else {
-        // Create new todo
         const newTodo = createTodo(title, description, dueDate, priority, notes);
         newTodo.projectId = projectId;
         newTodo.done = false;
         const targetProject = projects.find(p => p.id === projectId);
-        if (targetProject) {
-            targetProject.todos.push(newTodo);
-        } else {
-            // fallback to first project
-            projects[0].todos.push(newTodo);
-        }
+        if (targetProject) targetProject.todos.push(newTodo);
+        else projects[0].todos.push(newTodo);
     }
 
     editingTodoId = null;
@@ -280,13 +249,37 @@ function saveTodoFromModal(title, description, dueDate, priority, notes, project
 }
 
 // ============================================================
-// MODAL & FORM HANDLERS
+// MODAL & FORM SETUP (dynamically add missing fields)
 // ============================================================
+
+function ensureModalFields() {
+    const modal = document.getElementById("todo-modal");
+    const form = document.getElementById("todo-form");
+    if (!modal || !form) return;
+
+    // Add Notes field if missing
+    if (!document.getElementById("todo-notes")) {
+        const notesGroup = document.createElement("div");
+        notesGroup.className = "input-group";
+        notesGroup.innerHTML = `<label for="todo-notes">Notes (optional)</label><textarea id="todo-notes" rows="2"></textarea>`;
+        const insertBefore = form.querySelector(".form-buttons") || form.lastElementChild;
+        form.insertBefore(notesGroup, insertBefore);
+    }
+
+    // Add Project dropdown if missing
+    if (!document.getElementById("todo-project-id")) {
+        const projGroup = document.createElement("div");
+        projGroup.className = "input-group";
+        projGroup.innerHTML = `<label for="todo-project-id">Project</label><select id="todo-project-id"></select>`;
+        const insertBefore = form.querySelector(".form-buttons") || form.lastElementChild;
+        form.insertBefore(projGroup, insertBefore);
+    }
+}
 
 function setupModalHandlers() {
     const modal = document.getElementById("todo-modal");
     const form = document.getElementById("todo-form");
-    const cancelBtn = document.getElementById("cancel-modal-btn");
+    const cancelBtn = document.getElementById("cancel-modal-btn") || document.getElementById("cancel-todo-btn");
 
     if (!modal || !form) return;
 
@@ -296,8 +289,8 @@ function setupModalHandlers() {
         const description = document.getElementById("todo-desc").value;
         const dueDate = document.getElementById("todo-date").value;
         const priority = document.getElementById("todo-priority").value;
-        const notes = document.getElementById("todo-notes").value;
-        const projectId = parseInt(document.getElementById("todo-project-id").value);
+        const notes = document.getElementById("todo-notes")?.value || "";
+        const projectId = parseInt(document.getElementById("todo-project-id")?.value || projects[0]?.id);
 
         if (saveTodoFromModal(title, description, dueDate, priority, notes, projectId)) {
             closeTodoModal();
@@ -305,20 +298,50 @@ function setupModalHandlers() {
         }
     });
 
-    cancelBtn?.addEventListener("click", () => {
-        closeTodoModal();
-        clearForm();
-        editingTodoId = null;
-    });
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", () => {
+            closeTodoModal();
+            clearForm();
+            editingTodoId = null;
+        });
+    }
 
-    // Close modal when clicking outside backdrop? Not needed but nice
     modal.addEventListener("click", (e) => {
         if (e.target === modal) closeTodoModal();
     });
 }
 
 // ============================================================
-// GLOBAL EVENT LISTENERS
+// DARK MODE (works with your checkbox)
+// ============================================================
+
+function setupDarkMode() {
+    const checkbox = document.getElementById("theme-toggle");
+    if (!checkbox) return;
+
+    // Load saved preference
+    const savedDark = localStorage.getItem("dark");
+    if (savedDark === "true") {
+        document.body.classList.add("dark");
+        checkbox.checked = true;
+    } else {
+        document.body.classList.remove("dark");
+        checkbox.checked = false;
+    }
+
+    checkbox.addEventListener("change", (e) => {
+        if (e.target.checked) {
+            document.body.classList.add("dark");
+            localStorage.setItem("dark", "true");
+        } else {
+            document.body.classList.remove("dark");
+            localStorage.setItem("dark", "false");
+        }
+    });
+}
+
+// ============================================================
+// GLOBAL LISTENERS
 // ============================================================
 
 function setupGlobalListeners() {
@@ -336,7 +359,6 @@ function setupGlobalListeners() {
         addTodoBtn.addEventListener("click", () => {
             editingTodoId = null;
             clearForm();
-            // Preselect current project if active view is a project
             let defaultProjectId = projects[0]?.id;
             if (activeView.type === "project") defaultProjectId = activeView.id;
             populateProjectSelect(projects, defaultProjectId);
@@ -357,49 +379,36 @@ function setupGlobalListeners() {
         if (e.key === "Enter") addProject();
     });
 
-    // Category sidebar clicks
-    document.querySelectorAll(".category-item").forEach(el => {
+    // Category clicks – using your data-category attributes
+    document.querySelectorAll("#default-categories li").forEach(el => {
         el.addEventListener("click", () => {
-            const viewId = el.dataset.view;
-            if (viewId) {
-                activeView = { type: "category", id: viewId };
+            const cat = el.dataset.category;
+            if (cat) {
+                activeView = { type: "category", id: cat };
                 renderAll();
-                // Close sidebar on mobile
                 if (window.innerWidth <= 768) {
                     document.getElementById("sidebar")?.classList.remove("open");
                 }
             }
         });
     });
-
-    // Dark mode toggle (if needed, but already in HTML)
-    const darkToggle = document.getElementById("darkmode-toggle");
-    if (darkToggle) {
-        darkToggle.addEventListener("click", () => {
-            document.body.classList.toggle("dark");
-            localStorage.setItem("dark", document.body.classList.contains("dark"));
-        });
-        if (localStorage.getItem("dark") === "true") {
-            document.body.classList.add("dark");
-        }
-    }
 }
 
 // ============================================================
-// INITIALIZATION
+// INIT
 // ============================================================
 
 function init() {
+    ensureModalFields();          // Add missing notes & project select
     const hasData = loadFromLocalStorage();
     if (!hasData) {
-        // Create default project with a sample todo
         const defaultProject = createProject("Default Project");
         const sampleTodo = createTodo(
-            "Welcome to WhatToDo!",
-            "Edit or delete me, add projects, and organize tasks.",
+            "Welcome!",
+            "Click Done to delete this task.",
             new Date().toISOString().slice(0, 10),
             "medium",
-            "Try changing priority or due date ✨"
+            "Try adding a new project or task."
         );
         sampleTodo.projectId = defaultProject.id;
         defaultProject.todos.push(sampleTodo);
@@ -410,10 +419,10 @@ function init() {
     }
 
     activeView = { type: "category", id: "all" };
+    setupDarkMode();
     setupGlobalListeners();
     setupModalHandlers();
     renderAll();
 }
 
-// Start the application
 init();
