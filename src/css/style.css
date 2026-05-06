@@ -1,116 +1,160 @@
-/* Update Header Colors */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary-green: #27ae60;
+  --light-green: #a8e6cf;
+  --bg-gray: #f8f9fa;
+  --text-dark: #2c3e50;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Base Styles */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-gray);
+  color: var(--text-dark);
+  overflow-x: hidden;
+}
+
+/* --- HEADER & NAVIGATION --- */
 .header {
-  background-color: #ffffff; /* White background as seen in image */
-  color: #333;
-  padding: 10px 24px;
-  border-bottom: 2px solid #27ae60; /* Green accent line */
+  background: white;
+  padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 3px solid var(--primary-green);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+#menu-toggle {
+  display: none; /* Hidden on desktop */
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--primary-green);
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #27ae60;
-}
-
-/* Theme Toggle Switch (Dark/Light Mode) */
-.theme-switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-}
-
-.theme-switch input { opacity: 0; width: 0; height: 0; }
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
-  border-radius: 34px;
-}
-
-input:checked + .slider { background-color: #27ae60; }
-.nav-section h2, .projects-section h2 {
-  font-size: 1.2rem;
+  gap: 12px;
+  color: var(--primary-green);
   font-weight: 700;
-  margin: 20px 0 10px 0;
-  color: #2c3e50;
+  font-size: 1.2rem;
 }
 
-#default-categories {
-  list-style: none;
-  margin-bottom: 20px;
-}
-
-#default-categories li {
-  padding: 12px;
-  margin: 5px 0;
-  border-radius: 8px;
-  cursor: pointer;
+/* --- LAYOUT --- */
+.app-layout {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.2s ease;
+  min-height: calc(100vh - 70px);
 }
 
-#default-categories li:hover {
-  background-color: #f0f0f0;
+.sidebar {
+  width: 280px;
+  background: white;
+  padding: 2rem 1.5rem;
+  border-right: 1px solid #eee;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
 
-#default-categories li.active {
-  background-color: #a8e6cf; /* Light green highlight as seen in image */
-  color: #1b5e20;
-  font-weight: 600;
+/* --- MAIN CONTENT --- */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
 }
-.content-header {
-  background-color: #27ae60;
+
+.project-banner {
+  background: var(--primary-green);
   color: white;
-  padding: 40px;
-  border-radius: 8px;
-  margin-bottom: 30px;
+  padding: 2.5rem;
+  border-radius: 20px;
+  margin-bottom: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 10px 20px rgba(39, 174, 96, 0.2);
 }
 
-.content-header h2 {
-  font-size: 2.5rem;
-  margin: 0;
-  color: white;
+.project-banner h2 { font-size: 2rem; }
+
+/* --- TODO CARDS --- */
+.todo-card {
+  background: white;
+  padding: 1.2rem;
+  border-radius: 15px;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap; /* Allows date/actions to wrap on tiny screens */
+  justify-content: space-between;
+  align-items: center;
+  border-left: 8px solid #ccc;
+  box-shadow: var(--shadow);
 }
 
-#add-todo-btn {
-  background-color: white;
-  color: #27ae60;
-  font-weight: 600;
-  border: 2px solid white;
-}
+.todo-card.priority-high { border-left-color: var(--danger); }
+.todo-card.priority-medium { border-left-color: var(--warning); }
+.todo-card.priority-low { border-left-color: var(--primary-green); }
 
-#add-todo-btn:hover {
-  background-color: transparent;
-  color: white;
-}
-@media (max-width: 640px) {
-  #sidebar {
+/* --- RESPONSIVE QUERIES --- */
+
+/* Tablet & Mobile (Standard) */
+@media (max-width: 900px) {
+  .sidebar {
     position: fixed;
-    left: -260px; /* Hide off-screen */
-    top: 56px;
-    height: 100%;
-    z-index: 100;
-    transition: 0.3s;
+    left: 0;
+    top: 70px;
+    bottom: 0;
+    transform: translateX(-100%); /* Slide out of view */
+    z-index: 999;
+    box-shadow: 10px 0 15px rgba(0,0,0,0.1);
   }
 
-  #sidebar.active {
-    left: 0; /* Slide in */
+  .sidebar.active {
+    transform: translateX(0); /* Slide into view */
   }
 
-  .content-header h2 {
-    font-size: 1.5rem;
+  #menu-toggle {
+    display: block; /* Show hamburger menu */
+  }
+
+  .project-banner {
+    padding: 1.5rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .project-banner h2 { font-size: 1.5rem; }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 1rem;
+  }
+
+  .todo-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  .todo-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
   }
 }
