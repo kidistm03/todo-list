@@ -57,18 +57,6 @@ todo-list/
 - **Responsive** — works on mobile and desktop
 - Bundled with **Webpack**
 
-
-## 🛠 Tech Stack
-
-- HTML5
-- CSS3 (Flexbox + Media Queries)
-- Vanilla JavaScript (ES6 Modules)
-- [date-fns](https://date-fns.org/) for date formatting
-- [Webpack 5](https://webpack.js.org/) for bundling
-- [Babel](https://babeljs.io/) for browser compatibility
-
----
-
 ## 🌐 Deployment
 
 Deploy the `dist/` folder to [Netlify](https://netlify.com) or [Vercel](https://vercel.com).
