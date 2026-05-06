@@ -3,20 +3,16 @@
 // Handles UI rendering and DOM updates
 // ============================================================
 
-import { format, parseISO, isValid, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, parseISO, isValid } from "date-fns";
 
 /**
- * Helper: format a date string nicely
- * Updated to match the "cute" UI requirements.
+ * Format a due date into a human‑readable relative string (e.g., "today", "in 2 days").
  */
 function formatDate(dateStr) {
     if (!dateStr) return "No due date";
-
     try {
         const date = parseISO(dateStr);
         if (!isValid(date)) return dateStr;
-        
-        // Returns a nice relative date like "today" or "in 3 days"
         return formatDistanceToNow(date, { addSuffix: true });
     } catch {
         return dateStr;
@@ -24,34 +20,38 @@ function formatDate(dateStr) {
 }
 
 /**
- * Render the list of projects in the sidebar
+ * Render the list of projects in the sidebar.
+ * @param {Array} projects - Array of project objects.
+ * @param {string|number} activeProjectId - ID of the currently active project (if any).
+ * @param {Function} onSelectProject - Callback when a project is selected.
+ * @param {Function} onDeleteProject - Callback when a project is deleted.
  */
-function renderProjects(projects, activeProjectId, onSelectProject, onDeleteProject) {
+export function renderProjects(projects, activeProjectId, onSelectProject, onDeleteProject) {
     const list = document.getElementById("project-list");
-    list.innerHTML = ""; 
+    if (!list) return;
+    list.innerHTML = "";
 
     projects.forEach((project) => {
         const li = document.createElement("li");
-        // Apply active class for the "cute" highlight effect
-        if (project.id === activeProjectId) {
-            li.classList.add("active");
-        }
+        li.className = "project-item";
+        if (project.id === activeProjectId) li.classList.add("active");
 
         const nameSpan = document.createElement("span");
-        nameSpan.textContent = `📁 ${project.name}`; // Added icon for visual appeal
+        nameSpan.textContent = `📁 ${project.name}`;
+        nameSpan.style.flex = "1";
         nameSpan.addEventListener("click", () => {
             onSelectProject(project.id);
-            // Auto-hide sidebar on mobile after selection
-            if (window.innerWidth <= 900) {
-                document.querySelector('.sidebar').classList.remove('active');
+            // Close sidebar on mobile after selection
+            if (window.innerWidth <= 768) {
+                document.getElementById("sidebar")?.classList.remove("open");
             }
         });
 
         const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "×";
+        deleteBtn.textContent = "✕";
         deleteBtn.classList.add("delete-project-btn");
         deleteBtn.addEventListener("click", (e) => {
-            e.stopPropagation(); 
+            e.stopPropagation();
             onDeleteProject(project.id);
         });
 
@@ -62,131 +62,178 @@ function renderProjects(projects, activeProjectId, onSelectProject, onDeleteProj
 }
 
 /**
- * Render the todos for the selected project
+ * Render the todo list based on the current active view (category or project).
+ * @param {Array} todos - Filtered array of todo objects to display.
+ * @param {string} title - Title to show in the content header.
+ * @param {Object} callbacks - Contains onToggleDone, onEditTodo, onDeleteTodo functions.
  */
-function renderTodos(project, onExpandTodo, onToggleDone, onEditTodo, onDeleteTodo) {
-    const todoListDiv = document.getElementById("todo-list");
+export function renderTodos(todos, title, { onToggleDone, onEditTodo, onDeleteTodo }) {
+    const container = document.getElementById("todo-list-container");
     const titleEl = document.getElementById("current-project-title");
-    const addBtn = document.getElementById("add-todo-btn");
+    if (!container || !titleEl) return;
 
-    if (!project) {
-        titleEl.textContent = "Select a project";
-        todoListDiv.innerHTML = "";
-        addBtn.classList.add("hidden");
+    titleEl.textContent = title;
+    container.innerHTML = "";
+
+    if (!todos.length) {
+        container.innerHTML = `<div class="empty-message">✨ Yay! No Tasks! ✨</div>`;
         return;
     }
 
-    titleEl.textContent = project.name;
-    addBtn.classList.remove("hidden");
-    todoListDiv.innerHTML = "";
-
-    if (project.todos.length === 0) {
-        todoListDiv.innerHTML = '<p class="empty-message">Yay! No Tasks!</p>'; 
-        return;
-    }
-
-    project.todos.forEach((todo) => {
+    todos.forEach((todo) => {
         const card = document.createElement("div");
-        card.classList.add("todo-card", `priority-${todo.priority}`); 
+        card.className = `todo-card priority-${todo.priority}`;
 
-        if (todo.done) card.classList.add("done");
+        const dueRelative = todo.dueDate ? formatDate(todo.dueDate) : "No date";
 
-        const priorityEmoji = {
-            high: "🔴 High",
-            medium: "🟡 Medium",
-            low: "🟢 Low",
-        };
+        // optional project tag when viewing a category
+        const projectTag = todo.projectName
+            ? `<span style="font-size:0.7rem; background:var(--border); padding:0.2rem 0.6rem; border-radius:20px;">📁 ${todo.projectName}</span>`
+            : "";
 
         card.innerHTML = `
-            <div class="todo-header">
-                <h3>${todo.title}</h3>
+            <div class="todo-row">
+                <div class="todo-info">
+                    <div class="todo-title">
+                        <strong>${escapeHtml(todo.title)}</strong>
+                        <span class="priority-badge">${priorityIcon(todo.priority)}</span>
+                        ${projectTag}
+                    </div>
+                    ${todo.description ? `<div class="todo-desc">${escapeHtml(todo.description)}</div>` : ""}
+                    <div class="todo-meta">
+                        <span>📅 ${dueRelative}</span>
+                        ${todo.done ? '<span>✅ Completed</span>' : ""}
+                    </div>
+                </div>
                 <div class="todo-actions">
-                    <button class="btn-expand">Details</button>
-                    <button class="btn-done">${todo.done ? "Undo" : "Done"}</button>
-                    <button class="btn-edit">Edit</button>
-                    <button class="btn-delete">Delete</button>
+                    <button class="done-toggle" data-id="${todo.id}">${todo.done ? "Undo" : "Done"}</button>
+                    <button class="expand-btn" data-id="${todo.id}">📄 Details</button>
+                    <button class="edit-btn" data-id="${todo.id}">✏️ Edit</button>
+                    <button class="delete-btn" data-id="${todo.id}">🗑️ Delete</button>
                 </div>
             </div>
-            <p class="todo-due">📅 Due: ${formatDate(todo.dueDate)}</p>
-            <span class="todo-priority-badge badge-${todo.priority}">${priorityEmoji[todo.priority]}</span>
-            <div class="todo-details" style="display: none;">
-                <p><strong>Description:</strong> ${todo.description || "None"}</p>
-                <p><strong>Notes:</strong> ${todo.notes || "None"}</p>
+            <div class="expand-details" id="expand-${todo.id}" style="display: none;">
+                <strong>📝 Notes:</strong> ${escapeHtml(todo.notes || "—")}<br>
+                <strong>📌 Due date:</strong> ${todo.dueDate || "none"} &nbsp;|&nbsp;
+                <strong>Priority:</strong> ${todo.priority}
             </div>
         `;
 
-        // Event Listeners
-        card.querySelector(".btn-expand").addEventListener("click", () => toggleTodoDetails(card));
-        card.querySelector(".btn-done").addEventListener("click", () => onToggleDone(todo.id));
-        card.querySelector(".btn-edit").addEventListener("click", () => onEditTodo(todo));
-        card.querySelector(".btn-delete").addEventListener("click", () => onDeleteTodo(todo.id));
+        // Attach event listeners
+        const doneBtn = card.querySelector(".done-toggle");
+        const expandBtn = card.querySelector(".expand-btn");
+        const editBtn = card.querySelector(".edit-btn");
+        const deleteBtnCard = card.querySelector(".delete-btn");
 
-        todoListDiv.appendChild(card);
+        doneBtn?.addEventListener("click", () => onToggleDone(todo.id));
+        expandBtn?.addEventListener("click", () => {
+            const detailsDiv = card.querySelector(".expand-details");
+            if (detailsDiv) {
+                detailsDiv.style.display = detailsDiv.style.display === "block" ? "none" : "block";
+            }
+        });
+        editBtn?.addEventListener("click", () => onEditTodo(todo.id));
+        deleteBtnCard?.addEventListener("click", () => onDeleteTodo(todo.id));
+
+        container.appendChild(card);
     });
 }
 
-// ---- UI State Functions ----
-
-function toggleTodoDetails(card) {
-    const details = card.querySelector(".todo-details");
-    details.style.display = (details.style.display === "block") ? "none" : "block";
+/**
+ * Helper: return emoji + text for priority.
+ */
+function priorityIcon(priority) {
+    if (priority === "high") return "🔴 High";
+    if (priority === "medium") return "🟡 Medium";
+    return "🟢 Low";
 }
 
-function fillForm(todo) {
-    document.getElementById("todo-title").value = todo.title;
+/**
+ * Simple escape to prevent XSS.
+ */
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, (m) => {
+        if (m === "&") return "&amp;";
+        if (m === "<") return "&lt;";
+        if (m === ">") return "&gt;";
+        return m;
+    });
+}
+
+// ---------- Modal / Form Helpers ----------
+
+/**
+ * Fill the todo form with an existing todo's data for editing.
+ * @param {Object} todo - Todo object to edit.
+ */
+export function fillForm(todo) {
+    document.getElementById("todo-title").value = todo.title || "";
     document.getElementById("todo-desc").value = todo.description || "";
     document.getElementById("todo-date").value = todo.dueDate || "";
-    document.getElementById("todo-priority").value = todo.priority;
+    document.getElementById("todo-priority").value = todo.priority || "medium";
     document.getElementById("todo-notes").value = todo.notes || "";
-    document.getElementById("form-title").textContent = "Edit Todo";
+    document.getElementById("form-title").textContent = "Edit Task";
 }
 
-function clearForm() {
+/**
+ * Clear the todo form to default empty state.
+ */
+export function clearForm() {
     document.getElementById("todo-title").value = "";
     document.getElementById("todo-desc").value = "";
     document.getElementById("todo-date").value = "";
-    document.getElementById("todo-priority").value = "low";
+    document.getElementById("todo-priority").value = "medium";
     document.getElementById("todo-notes").value = "";
-    document.getElementById("form-title").textContent = "Add New Todo";
+    document.getElementById("form-title").textContent = "New Task";
 }
 
-// ---- Form Visibility Helpers (Fixed for image_5cff77.jpg) ----
-
-function showTodoForm() {
-  const container = document.getElementById("todo-form-container");
-  if (container) container.classList.remove("hidden");
+/**
+ * Populate the project dropdown inside the modal.
+ * @param {Array} projects - List of project objects.
+ * @param {string|number} selectedProjectId - ID of the currently selected project.
+ */
+export function populateProjectSelect(projects, selectedProjectId) {
+    const select = document.getElementById("todo-project-id");
+    if (!select) return;
+    select.innerHTML = projects.map(p => `<option value="${p.id}" ${p.id == selectedProjectId ? "selected" : ""}>${escapeHtml(p.name)}</option>`).join("");
 }
 
-function hideTodoForm() {
-  const container = document.getElementById("todo-form-container");
-  if (container) container.classList.add("hidden");
+/**
+ * Show the "Add Project" inline form.
+ */
+export function showProjectForm() {
+    const form = document.getElementById("new-project-form");
+    const btn = document.getElementById("add-project-btn");
+    if (form) form.classList.remove("hidden");
+    if (btn) btn.classList.add("hidden");
 }
 
-function showProjectForm() {
-  const form = document.getElementById("new-project-form");
-  const btn = document.getElementById("add-project-btn");
-  if (form) form.classList.remove("hidden");
-  if (btn) btn.classList.add("hidden");
+/**
+ * Hide the "Add Project" inline form and reset input.
+ */
+export function hideProjectForm() {
+    const form = document.getElementById("new-project-form");
+    const btn = document.getElementById("add-project-btn");
+    if (form) form.classList.add("hidden");
+    if (btn) btn.classList.remove("hidden");
+    const input = document.getElementById("new-project-name");
+    if (input) input.value = "";
 }
 
-function hideProjectForm() {
-  const form = document.getElementById("new-project-form");
-  const btn = document.getElementById("add-project-btn");
-  if (form) form.classList.add("hidden");
-  if (btn) btn.classList.remove("hidden");
-  const input = document.getElementById("new-project-name");
-  if (input) input.value = "";
+/**
+ * Open the modal for creating/editing a todo.
+ * @param {boolean} isEdit - True if editing existing todo.
+ */
+export function openTodoModal(isEdit = false) {
+    const modal = document.getElementById("todo-modal");
+    if (modal) modal.showModal();
 }
 
-// Exporting modules as required by index.js
-export {
-    renderProjects,
-    renderTodos,
-    toggleTodoDetails,
-    fillForm,
-    clearForm,
-    showTodoForm,
-    hideTodoForm,
-    showProjectForm,
-    hideProjectForm,
-};
+/**
+ * Close the todo modal.
+ */
+export function closeTodoModal() {
+    const modal = document.getElementById("todo-modal");
+    if (modal) modal.close();
+}
