@@ -6,34 +6,38 @@
 // ============================================================
 
 // A counter to give each todo a unique ID
+// todo.js
+// Factory function for creating todo objects (meets "Factory functions or ES6 Classes" requirement)
+
 let todoIdCounter = 1;
 
 /**
- * createTodo - Factory function that creates a new todo object.
- *
- * @param {string} title       - The main task name (required)
- * @param {string} description - Extra detail about the task
- * @param {string} dueDate     - Due date as a string (e.g. "2025-06-01")
- * @param {string} priority    - "low", "medium", or "high"
- * @param {string} notes       - Optional additional notes
- * @returns {object}           - A todo object
+ * Create a new todo object.
+ * @param {string} title - The main task name (required)
+ * @param {string} description - Extra details about the task
+ * @param {string} dueDate - Due date as a string (YYYY-MM-DD)
+ * @param {string} priority - Priority level: "low", "medium", or "high"
+ * @param {string} notes - Optional additional notes
+ * @returns {object} - A todo object with unique id, title, description, dueDate, priority, notes, and done: false
  */
 function createTodo(title, description, dueDate, priority = "low", notes = "") {
-  return {
-    id: todoIdCounter++,   // unique ID for this todo
-    title,
-    description,
-    dueDate,
-    priority,
-    notes,
-    done: false,           // not completed by default
-  };
+    return {
+        id: todoIdCounter++,      // auto-incrementing unique ID
+        title: title,
+        description: description || "",
+        dueDate: dueDate,
+        priority: priority,       // "low", "medium", or "high"
+        notes: notes || "",
+        done: false,              // not completed by default
+    };
 }
 
-// We also export a helper to set the counter when loading from localStorage
-// so IDs continue from where they left off
+/**
+ * Set the internal ID counter (used when loading data from localStorage).
+ * @param {number} value - The next ID to use for a new todo
+ */
 function setTodoIdCounter(value) {
-  todoIdCounter = value;
+    todoIdCounter = value;
 }
 
 export { createTodo, setTodoIdCounter };
