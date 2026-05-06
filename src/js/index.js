@@ -7,294 +7,413 @@
 
 // Import our CSS (Webpack will handle bundling it)
 import "../css/style.css";
-
-// Import our modules
 import { createProject, setProjectIdCounter } from "./project.js";
 import { createTodo, setTodoIdCounter } from "./todo.js";
 import { saveData, loadData } from "./storage.js";
 import {
-  renderProjects,
-  renderTodos,
-  toggleTodoDetails,
-  fillForm,
-  clearForm,
-  showTodoForm,
-  hideTodoForm,
-  showProjectForm,
-  hideProjectForm,
+    renderProjects,
+    renderTodos,
+    fillForm,
+    clearForm,
+    populateProjectSelect,
+    showProjectForm,
+    hideProjectForm,
+    openTodoModal,
+    closeTodoModal,
 } from "./dom.js";
+import { format, parseISO, isValid, isToday, isWithinInterval, addDays } from "date-fns";
 
 // ============================================================
 // APP STATE
-// These are the variables that hold all the app's data.
 // ============================================================
 
-let projects = [];         // Array of all project objects
-let activeProjectId = null; // ID of the currently selected project
-let editingTodoId = null;   // If we're editing, this holds the todo's ID
+let projects = [];                // Array of project objects { id, name, todos: [] }
+let activeView = { type: "category", id: "all" };   // 'category' or 'project'
+let editingTodoId = null;         // ID of todo being edited, null if adding new
 
 // ============================================================
-// INITIALIZATION
-// Run when the page first loads
+// STORAGE HELPERS
 // ============================================================
 
-function init() {
-  // Try to load saved data from localStorage
-  const savedData = loadData();
+function saveToLocalStorage() {
+    saveData({
+        projects,
+        projectIdCounter: projects.length + 100,
+        todoIdCounter: Date.now(),
+    });
+}
 
-  if (savedData && savedData.projects.length > 0) {
-    // Restore projects from storage
-    projects = savedData.projects;
-
-    // Restore the ID counters so new IDs continue from where we left off
-    setProjectIdCounter(savedData.projectIdCounter || projects.length + 1);
-    setTodoIdCounter(savedData.todoIdCounter || Date.now());
-
-    // Select the first project by default
-    activeProjectId = projects[0].id;
-  } else {
-    // Requirements: default project on first load[cite: 1]
-    // UI update based on image: Name changed to "All Tasks"
-    const defaultProject = createProject("All Tasks");
-    projects.push(defaultProject);
-    activeProjectId = defaultProject.id;
-    save(); // Save this initial state
-  }
-
-  // Setup Global Listeners (including responsive toggle)
-  setupGlobalListeners();
-
-  // Render everything on screen
-  renderAll();
+function loadFromLocalStorage() {
+    const saved = loadData();
+    if (saved && saved.projects && saved.projects.length > 0) {
+        projects = saved.projects;
+        setProjectIdCounter(saved.projectIdCounter || 100);
+        setTodoIdCounter(saved.todoIdCounter || Date.now());
+        return true;
+    }
+    return false;
 }
 
 // ============================================================
-// HELPER: Get the currently active project object
+// FILTERING LOGIC FOR CATEGORIES
 // ============================================================
 
-function getActiveProject() {
-  return projects.find((p) => p.id === activeProjectId) || null;
+function getAllTodosFlat() {
+    // Flatten all todos from all projects, attach projectName for display
+    return projects.flatMap(proj =>
+        proj.todos.map(todo => ({ ...todo, projectName: proj.name, projectId: proj.id }))
+    );
+}
+
+function getFilteredTodos() {
+    const allTodos = getAllTodosFlat();
+    if (activeView.type === "project") {
+        const project = projects.find(p => p.id === activeView.id);
+        return project ? project.todos.map(t => ({ ...t, projectName: project.name })) : [];
+    }
+
+    // Category filtering
+    switch (activeView.id) {
+        case "today":
+            return allTodos.filter(todo => {
+                if (!todo.dueDate) return false;
+                const due = parseISO(todo.dueDate);
+                return isValid(due) && isToday(due);
+            });
+        case "week":
+            const today = new Date();
+            const nextWeek = addDays(today, 7);
+            return allTodos.filter(todo => {
+                if (!todo.dueDate) return false;
+                const due = parseISO(todo.dueDate);
+                return isValid(due) && isWithinInterval(due, { start: today, end: nextWeek });
+            });
+        case "important":
+            return allTodos.filter(todo => todo.priority === "high");
+        default: // "all"
+            return allTodos;
+    }
 }
 
 // ============================================================
-// HELPER: Save and re-render
-// Call this after any change to keep storage and UI in sync
+// RENDER EVERYTHING (UI UPDATE)
 // ============================================================
-
-function save() {
-  // We save both the projects and the current ID counters
-  saveData({
-    projects,
-    projectIdCounter: projects.length + 1,
-    todoIdCounter: Date.now(), // Use timestamp as a safe large number
-  });
-}
 
 function renderAll() {
-  renderProjects(projects, activeProjectId, selectProject, deleteProject);
-  renderTodos(getActiveProject(), expandTodo, toggleDone, startEditTodo, deleteTodo);
+    // Render projects in sidebar
+    const activeProjectId = (activeView.type === "project") ? activeView.id : null;
+    renderProjects(projects, activeProjectId, selectProject, deleteProject);
+
+    // Get todos based on current view
+    let todos = getFilteredTodos();
+    let title = "";
+
+    if (activeView.type === "category") {
+        switch (activeView.id) {
+            case "all": title = "All Tasks"; break;
+            case "today": title = "Today"; break;
+            case "week": title = "Next 7 Days"; break;
+            case "important": title = "Important"; break;
+            default: title = "Tasks";
+        }
+    } else {
+        const project = projects.find(p => p.id === activeView.id);
+        title = project ? project.name : "Tasks";
+    }
+
+    renderTodos(todos, title, {
+        onToggleDone: toggleDone,
+        onEditTodo: startEditTodo,
+        onDeleteTodo: deleteTodo,
+    });
+
+    // Update active class for categories sidebar
+    document.querySelectorAll(".category-item").forEach(el => {
+        const viewId = el.dataset.view;
+        if (activeView.type === "category" && activeView.id === viewId) {
+            el.classList.add("active");
+        } else {
+            el.classList.remove("active");
+        }
+    });
 }
 
 // ============================================================
 // PROJECT ACTIONS
 // ============================================================
 
-// Select a project (switch the active one)
 function selectProject(projectId) {
-  activeProjectId = projectId;
-  hideTodoForm(); // Hide the form when switching projects
-  renderAll();
+    activeView = { type: "project", id: projectId };
+    renderAll();
 }
 
-// Delete a project
 function deleteProject(projectId) {
-  // Ensure user has at least one project
-  if (projects.length <= 1) {
-    alert("You must have at least one project!");
-    return;
-  }
+    if (projects.length <= 1) {
+        alert("You must keep at least one project.");
+        return;
+    }
+    if (!confirm(`Delete project "${projects.find(p => p.id === projectId)?.name}" and all its tasks?`)) return;
 
-  // Ask the user to confirm before deleting
-  const confirmed = window.confirm("Delete this project and all its todos?");
-  if (!confirmed) return;
-
-  // Remove the project from the array
-  projects = projects.filter((p) => p.id !== projectId);
-
-  // If we deleted the active project, select the first remaining one
-  if (activeProjectId === projectId) {
-    activeProjectId = projects.length > 0 ? projects[0].id : null;
-  }
-
-  save();
-  renderAll();
+    projects = projects.filter(p => p.id !== projectId);
+    if (activeView.type === "project" && activeView.id === projectId) {
+        activeView = { type: "category", id: "all" };
+    }
+    saveToLocalStorage();
+    renderAll();
 }
 
-// Add a new project
 function addProject() {
-  const nameInput = document.getElementById("new-project-name");
-  const name = nameInput.value.trim();
-
-  if (!name) {
-    alert("Please enter a project name!");
-    return;
-  }
-
-  const newProject = createProject(name);
-  projects.push(newProject);
-  activeProjectId = newProject.id; // Switch to the new project
-
-  hideProjectForm();
-  save();
-  renderAll();
+    const nameInput = document.getElementById("new-project-name");
+    const name = nameInput.value.trim();
+    if (!name) {
+        alert("Please enter a project name.");
+        return;
+    }
+    const newProject = createProject(name);
+    projects.push(newProject);
+    activeView = { type: "project", id: newProject.id };
+    hideProjectForm();
+    saveToLocalStorage();
+    renderAll();
 }
 
 // ============================================================
 // TODO ACTIONS
 // ============================================================
 
-// Expand/collapse a todo's details
-function expandTodo(card) {
-  toggleTodoDetails(card);
-}
-
-// Toggle a todo's "done" status
 function toggleDone(todoId) {
-  const project = getActiveProject();
-  if (!project) return;
-
-  // Find the todo and flip its done property
-  const todo = project.todos.find((t) => t.id === todoId);
-  if (todo) {
-    todo.done = !todo.done;
-    save();
-    renderAll();
-  }
-}
-
-// Start editing a todo: fill the form with its data
-function startEditTodo(todo) {
-  editingTodoId = todo.id;  // Remember which todo we're editing
-  fillForm(todo);
-  showTodoForm();
-}
-
-// Delete a todo
-function deleteTodo(todoId) {
-  const confirmed = window.confirm("Delete this todo?");
-  if (!confirmed) return;
-
-  const project = getActiveProject();
-  if (!project) return;
-
-  // Filter out the deleted todo
-  project.todos = project.todos.filter((t) => t.id !== todoId);
-
-  save();
-  renderAll();
-}
-
-// Save a todo (handles both adding new and editing existing)
-function saveTodo() {
-  // Read values from the form
-  const title = document.getElementById("todo-title").value.trim();
-  const description = document.getElementById("todo-desc").value.trim();
-  const dueDate = document.getElementById("todo-date").value;
-  const priority = document.getElementById("todo-priority").value;
-  const notes = document.getElementById("todo-notes").value.trim();
-
-  // Validate: title and date are required
-  if (!title) {
-    alert("Please enter a title for the todo!");
-    return;
-  }
-  if (!dueDate) {
-    alert("Please pick a due date!");
-    return;
-  }
-
-  const project = getActiveProject();
-  if (!project) return;
-
-  if (editingTodoId !== null) {
-    // --- EDITING MODE: update the existing todo ---
-    const todo = project.todos.find((t) => t.id === editingTodoId);
-    if (todo) {
-      todo.title = title;
-      todo.description = description;
-      todo.dueDate = dueDate;
-      todo.priority = priority;
-      todo.notes = notes;
+    // Find the todo across all projects
+    for (const project of projects) {
+        const todo = project.todos.find(t => t.id === todoId);
+        if (todo) {
+            todo.done = !todo.done;
+            saveToLocalStorage();
+            renderAll();
+            return;
+        }
     }
-    editingTodoId = null; // Reset editing state
+}
 
-  } else {
-    // --- ADD MODE: create a brand new todo ---
-    const newTodo = createTodo(title, description, dueDate, priority, notes);
-    project.todos.push(newTodo);
-  }
+function deleteTodo(todoId) {
+    if (!confirm("Delete this task?")) return;
+    for (let i = 0; i < projects.length; i++) {
+        const index = projects[i].todos.findIndex(t => t.id === todoId);
+        if (index !== -1) {
+            projects[i].todos.splice(index, 1);
+            break;
+        }
+    }
+    saveToLocalStorage();
+    renderAll();
+}
 
-  clearForm();
-  hideTodoForm();
-  save();
-  renderAll();
+function startEditTodo(todoId) {
+    // Find the full todo object
+    let foundTodo = null;
+    let foundProjectId = null;
+    for (const proj of projects) {
+        const todo = proj.todos.find(t => t.id === todoId);
+        if (todo) {
+            foundTodo = todo;
+            foundProjectId = proj.id;
+            break;
+        }
+    }
+    if (foundTodo) {
+        editingTodoId = todoId;
+        fillForm(foundTodo);
+        // Populate project dropdown with current project selected
+        populateProjectSelect(projects, foundProjectId);
+        openTodoModal(true);
+    }
+}
+
+function saveTodoFromModal(title, description, dueDate, priority, notes, projectId) {
+    if (!title || !dueDate) {
+        alert("Title and due date are required.");
+        return false;
+    }
+
+    if (editingTodoId !== null) {
+        // Update existing todo
+        for (const proj of projects) {
+            const todo = proj.todos.find(t => t.id === editingTodoId);
+            if (todo) {
+                todo.title = title;
+                todo.description = description;
+                todo.dueDate = dueDate;
+                todo.priority = priority;
+                todo.notes = notes;
+                // If project changed, move the todo
+                if (todo.projectId !== projectId) {
+                    // Remove from current project
+                    const index = proj.todos.findIndex(t => t.id === editingTodoId);
+                    proj.todos.splice(index, 1);
+                    // Add to target project
+                    const targetProject = projects.find(p => p.id === projectId);
+                    if (targetProject) {
+                        const movedTodo = { ...todo, projectId: projectId };
+                        targetProject.todos.push(movedTodo);
+                    }
+                }
+                break;
+            }
+        }
+    } else {
+        // Create new todo
+        const newTodo = createTodo(title, description, dueDate, priority, notes);
+        newTodo.projectId = projectId;
+        newTodo.done = false;
+        const targetProject = projects.find(p => p.id === projectId);
+        if (targetProject) {
+            targetProject.todos.push(newTodo);
+        } else {
+            // fallback to first project
+            projects[0].todos.push(newTodo);
+        }
+    }
+
+    editingTodoId = null;
+    saveToLocalStorage();
+    renderAll();
+    return true;
 }
 
 // ============================================================
-// EVENT LISTENERS
+// MODAL & FORM HANDLERS
+// ============================================================
+
+function setupModalHandlers() {
+    const modal = document.getElementById("todo-modal");
+    const form = document.getElementById("todo-form");
+    const cancelBtn = document.getElementById("cancel-modal-btn");
+
+    if (!modal || !form) return;
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const title = document.getElementById("todo-title").value.trim();
+        const description = document.getElementById("todo-desc").value;
+        const dueDate = document.getElementById("todo-date").value;
+        const priority = document.getElementById("todo-priority").value;
+        const notes = document.getElementById("todo-notes").value;
+        const projectId = parseInt(document.getElementById("todo-project-id").value);
+
+        if (saveTodoFromModal(title, description, dueDate, priority, notes, projectId)) {
+            closeTodoModal();
+            clearForm();
+        }
+    });
+
+    cancelBtn?.addEventListener("click", () => {
+        closeTodoModal();
+        clearForm();
+        editingTodoId = null;
+    });
+
+    // Close modal when clicking outside backdrop? Not needed but nice
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeTodoModal();
+    });
+}
+
+// ============================================================
+// GLOBAL EVENT LISTENERS
 // ============================================================
 
 function setupGlobalListeners() {
-  // Responsive sidebar toggle (based on mobile menu button in UI image)
-  const menuToggle = document.getElementById("menu-toggle");
-  if (menuToggle) {
-    menuToggle.addEventListener("click", () => {
-      document.querySelector(".sidebar").classList.toggle("active");
-    });
-  }
-
-  // "Add Todo" button
-  document.getElementById("add-todo-btn").addEventListener("click", () => {
-    editingTodoId = null; // Make sure we're in "add" mode
-    clearForm();
-    showTodoForm();
-  });
-
-  // "Save Todo" button in the form
-  document.getElementById("save-todo-btn").addEventListener("click", saveTodo);
-
-  // "Cancel" button in the todo form
-  document.getElementById("cancel-todo-btn").addEventListener("click", () => {
-    clearForm();
-    hideTodoForm();
-    editingTodoId = null;
-  });
-
-  // "New Project" button
-  document.getElementById("add-project-btn").addEventListener("click", showProjectForm);
-
-  // "Save" in the new project form
-  document.getElementById("save-project-btn").addEventListener("click", addProject);
-
-  // "Cancel" in the new project form
-  document.getElementById("cancel-project-btn").addEventListener("click", hideProjectForm);
-
-  // Allow pressing Enter in the project name input to save
-  document.getElementById("new-project-name").addEventListener("keyup", (e) => {
-    if (e.key === "Enter") addProject();
-  });
-
-  // Listener for "Home" categories (All Tasks, Today, etc.)
-  document.querySelector(".nav-list").addEventListener("click", (e) => {
-    if (e.target.tagName === "LI") {
-      // Logic for filtering by date would go here
-      // For now, it highlights and switches to the 'All Tasks' view
-      renderAll();
+    // Mobile menu toggle
+    const menuToggle = document.getElementById("menu-toggle");
+    if (menuToggle) {
+        menuToggle.addEventListener("click", () => {
+            document.getElementById("sidebar")?.classList.toggle("open");
+        });
     }
-  });
+
+    // Add Todo button
+    const addTodoBtn = document.getElementById("add-todo-btn");
+    if (addTodoBtn) {
+        addTodoBtn.addEventListener("click", () => {
+            editingTodoId = null;
+            clearForm();
+            // Preselect current project if active view is a project
+            let defaultProjectId = projects[0]?.id;
+            if (activeView.type === "project") defaultProjectId = activeView.id;
+            populateProjectSelect(projects, defaultProjectId);
+            openTodoModal(false);
+        });
+    }
+
+    // Project form buttons
+    const addProjectBtn = document.getElementById("add-project-btn");
+    const saveProjectBtn = document.getElementById("save-project-btn");
+    const cancelProjectBtn = document.getElementById("cancel-project-btn");
+    const newProjectInput = document.getElementById("new-project-name");
+
+    addProjectBtn?.addEventListener("click", showProjectForm);
+    saveProjectBtn?.addEventListener("click", addProject);
+    cancelProjectBtn?.addEventListener("click", hideProjectForm);
+    newProjectInput?.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") addProject();
+    });
+
+    // Category sidebar clicks
+    document.querySelectorAll(".category-item").forEach(el => {
+        el.addEventListener("click", () => {
+            const viewId = el.dataset.view;
+            if (viewId) {
+                activeView = { type: "category", id: viewId };
+                renderAll();
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    document.getElementById("sidebar")?.classList.remove("open");
+                }
+            }
+        });
+    });
+
+    // Dark mode toggle (if needed, but already in HTML)
+    const darkToggle = document.getElementById("darkmode-toggle");
+    if (darkToggle) {
+        darkToggle.addEventListener("click", () => {
+            document.body.classList.toggle("dark");
+            localStorage.setItem("dark", document.body.classList.contains("dark"));
+        });
+        if (localStorage.getItem("dark") === "true") {
+            document.body.classList.add("dark");
+        }
+    }
 }
 
 // ============================================================
-// START THE APP
+// INITIALIZATION
 // ============================================================
+
+function init() {
+    const hasData = loadFromLocalStorage();
+    if (!hasData) {
+        // Create default project with a sample todo
+        const defaultProject = createProject("Default Project");
+        const sampleTodo = createTodo(
+            "Welcome to WhatToDo!",
+            "Edit or delete me, add projects, and organize tasks.",
+            new Date().toISOString().slice(0, 10),
+            "medium",
+            "Try changing priority or due date ✨"
+        );
+        sampleTodo.projectId = defaultProject.id;
+        defaultProject.todos.push(sampleTodo);
+        projects = [defaultProject];
+        setProjectIdCounter(100);
+        setTodoIdCounter(Date.now());
+        saveToLocalStorage();
+    }
+
+    activeView = { type: "category", id: "all" };
+    setupGlobalListeners();
+    setupModalHandlers();
+    renderAll();
+}
+
+// Start the application
 init();
