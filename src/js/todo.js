@@ -30,10 +30,10 @@ function createTodo(title, description, dueDate, priority = "low", notes = "") {
   };
 }
 
-export { createTodo, todoIdCounter };
-
 // We also export a helper to set the counter when loading from localStorage
 // so IDs continue from where they left off
-export function setTodoIdCounter(value) {
+function setTodoIdCounter(value) {
   todoIdCounter = value;
 }
+
+export { createTodo, setTodoIdCounter };
