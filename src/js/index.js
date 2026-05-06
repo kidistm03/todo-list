@@ -424,5 +424,4 @@ function init() {
     setupModalHandlers();
     renderAll();
 }
-
 init();
