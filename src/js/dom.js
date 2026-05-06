@@ -81,13 +81,12 @@ function renderTodos(project, onExpandTodo, onToggleDone, onEditTodo, onDeleteTo
     todoListDiv.innerHTML = "";
 
     if (project.todos.length === 0) {
-        todoListDiv.innerHTML = '<p class="empty-message">Yay! No Tasks!</p>'; // Matched text to image_67747c.png
+        todoListDiv.innerHTML = '<p class="empty-message">Yay! No Tasks!</p>'; 
         return;
     }
 
     project.todos.forEach((todo) => {
         const card = document.createElement("div");
-        // Added 'todo-card' class to match the new CSS
         card.classList.add("todo-card", `priority-${todo.priority}`); 
 
         if (todo.done) card.classList.add("done");
@@ -151,11 +150,43 @@ function clearForm() {
     document.getElementById("form-title").textContent = "Add New Todo";
 }
 
-// Exporting modules as required by project structure
+// ---- Form Visibility Helpers (Fixed for image_5cff77.jpg) ----
+
+function showTodoForm() {
+  const container = document.getElementById("todo-form-container");
+  if (container) container.classList.remove("hidden");
+}
+
+function hideTodoForm() {
+  const container = document.getElementById("todo-form-container");
+  if (container) container.classList.add("hidden");
+}
+
+function showProjectForm() {
+  const form = document.getElementById("new-project-form");
+  const btn = document.getElementById("add-project-btn");
+  if (form) form.classList.remove("hidden");
+  if (btn) btn.classList.add("hidden");
+}
+
+function hideProjectForm() {
+  const form = document.getElementById("new-project-form");
+  const btn = document.getElementById("add-project-btn");
+  if (form) form.classList.add("hidden");
+  if (btn) btn.classList.remove("hidden");
+  const input = document.getElementById("new-project-name");
+  if (input) input.value = "";
+}
+
+// Exporting modules as required by index.js
 export {
     renderProjects,
     renderTodos,
     toggleTodoDetails,
     fillForm,
     clearForm,
+    showTodoForm,
+    hideTodoForm,
+    showProjectForm,
+    hideProjectForm,
 };
