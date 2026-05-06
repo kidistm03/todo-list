@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Todo List</title>
+  </head>
+  <body>
+
+    <!-- ===== TOP NAVIGATION BAR ===== -->
+    <header class="header">
+      <h1>📝 My Todo App</h1>
+    </header>
+
+    <!-- ===== MAIN LAYOUT: sidebar + content ===== -->
+    <div class="app-layout">
+
+      <!-- LEFT SIDEBAR: Project list -->
+      <aside class="sidebar">
+        <h2>Projects</h2>
+
+        <!-- This list will be filled by JavaScript -->
+        <ul id="project-list"></ul>
+
+        <!-- Button to add a new project -->
+        <button id="add-project-btn">+ New Project</button>
+
+        <!-- Form to enter a new project name (hidden by default) -->
+        <div id="new-project-form" class="hidden">
+          <input type="text" id="new-project-name" placeholder="Project name..." />
+          <button id="save-project-btn">Save</button>
+          <button id="cancel-project-btn">Cancel</button>
+        </div>
+      </aside>
+
+      <!-- RIGHT MAIN AREA: Todos for the selected project -->
+      <main class="main-content">
+        <!-- Title of the current project -->
+        <h2 id="current-project-title">Select a project</h2>
+
+        <!-- Button to add a todo (hidden until a project is selected) -->
+        <button id="add-todo-btn" class="hidden">+ Add Todo</button>
+
+        <!-- List of todos — filled by JavaScript -->
+        <div id="todo-list"></div>
+
+        <!-- ===== ADD / EDIT TODO FORM (hidden by default) ===== -->
+        <div id="todo-form-container" class="hidden">
+          <h3 id="form-title">Add New Todo</h3>
+
+          <label>Title *</label>
+          <input type="text" id="todo-title" placeholder="What needs to be done?" />
+
+          <label>Description</label>
+          <textarea id="todo-desc" placeholder="More details..."></textarea>
+
+          <label>Due Date *</label>
+          <input type="date" id="todo-date" />
+
+          <label>Priority</label>
+          <select id="todo-priority">
+            <option value="low">🟢 Low</option>
+            <option value="medium">🟡 Medium</option>
+            <option value="high">🔴 High</option>
+          </select>
+
+          <label>Notes (optional)</label>
+          <textarea id="todo-notes" placeholder="Any extra notes..."></textarea>
+
+          <div class="form-buttons">
+            <button id="save-todo-btn">Save Todo</button>
+            <button id="cancel-todo-btn">Cancel</button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Webpack will inject the bundled JS file here automatically -->
+  </body>
+</html>
