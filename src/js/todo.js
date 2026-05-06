@@ -8,7 +8,6 @@
 // A counter to give each todo a unique ID
 // todo.js
 // Factory function for creating todo objects (meets "Factory functions or ES6 Classes" requirement)
-
 let todoIdCounter = 1;
 
 /**
