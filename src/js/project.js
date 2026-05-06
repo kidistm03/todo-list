@@ -21,9 +21,9 @@ function createProject(name) {
   };
 }
 
-export { createProject };
-
 // Helper to set the counter when loading from storage
-export function setProjectIdCounter(value) {
+function setProjectIdCounter(value) {
   projectIdCounter = value;
 }
+
+export { createProject, setProjectIdCounter };
