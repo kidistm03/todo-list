@@ -48,17 +48,21 @@ function init() {
 
     // Restore the ID counters so new IDs continue from where we left off
     setProjectIdCounter(savedData.projectIdCounter || projects.length + 1);
-    setTodoIdCounter(savedData.todoIdCounter || 1);
+    setTodoIdCounter(savedData.todoIdCounter || Date.now());
 
     // Select the first project by default
     activeProjectId = projects[0].id;
   } else {
-    // First time loading — create a default "Personal" project
-    const defaultProject = createProject("Personal");
+    // Requirements: default project on first load[cite: 1]
+    // UI update based on image: Name changed to "All Tasks"
+    const defaultProject = createProject("All Tasks");
     projects.push(defaultProject);
     activeProjectId = defaultProject.id;
     save(); // Save this initial state
   }
+
+  // Setup Global Listeners (including responsive toggle)
+  setupGlobalListeners();
 
   // Render everything on screen
   renderAll();
@@ -82,7 +86,7 @@ function save() {
   saveData({
     projects,
     projectIdCounter: projects.length + 1,
-    todoIdCounter: Date.now(), // use timestamp as a safe large number
+    todoIdCounter: Date.now(), // Use timestamp as a safe large number
   });
 }
 
@@ -104,6 +108,12 @@ function selectProject(projectId) {
 
 // Delete a project
 function deleteProject(projectId) {
+  // Ensure user has at least one project
+  if (projects.length <= 1) {
+    alert("You must have at least one project!");
+    return;
+  }
+
   // Ask the user to confirm before deleting
   const confirmed = window.confirm("Delete this project and all its todos?");
   if (!confirmed) return;
@@ -232,39 +242,57 @@ function saveTodo() {
 
 // ============================================================
 // EVENT LISTENERS
-// Set up all button clicks when the page loads
 // ============================================================
 
-// "Add Todo" button
-document.getElementById("add-todo-btn").addEventListener("click", () => {
-  editingTodoId = null; // Make sure we're in "add" mode
-  clearForm();
-  showTodoForm();
-});
+function setupGlobalListeners() {
+  // Responsive sidebar toggle (based on mobile menu button in UI image)
+  const menuToggle = document.getElementById("menu-toggle");
+  if (menuToggle) {
+    menuToggle.addEventListener("click", () => {
+      document.querySelector(".sidebar").classList.toggle("active");
+    });
+  }
 
-// "Save Todo" button in the form
-document.getElementById("save-todo-btn").addEventListener("click", saveTodo);
+  // "Add Todo" button
+  document.getElementById("add-todo-btn").addEventListener("click", () => {
+    editingTodoId = null; // Make sure we're in "add" mode
+    clearForm();
+    showTodoForm();
+  });
 
-// "Cancel" button in the todo form
-document.getElementById("cancel-todo-btn").addEventListener("click", () => {
-  clearForm();
-  hideTodoForm();
-  editingTodoId = null;
-});
+  // "Save Todo" button in the form
+  document.getElementById("save-todo-btn").addEventListener("click", saveTodo);
 
-// "New Project" button
-document.getElementById("add-project-btn").addEventListener("click", showProjectForm);
+  // "Cancel" button in the todo form
+  document.getElementById("cancel-todo-btn").addEventListener("click", () => {
+    clearForm();
+    hideTodoForm();
+    editingTodoId = null;
+  });
 
-// "Save" in the new project form
-document.getElementById("save-project-btn").addEventListener("click", addProject);
+  // "New Project" button
+  document.getElementById("add-project-btn").addEventListener("click", showProjectForm);
 
-// "Cancel" in the new project form
-document.getElementById("cancel-project-btn").addEventListener("click", hideProjectForm);
+  // "Save" in the new project form
+  document.getElementById("save-project-btn").addEventListener("click", addProject);
 
-// Allow pressing Enter in the project name input to save
-document.getElementById("new-project-name").addEventListener("keyup", (e) => {
-  if (e.key === "Enter") addProject();
-});
+  // "Cancel" in the new project form
+  document.getElementById("cancel-project-btn").addEventListener("click", hideProjectForm);
+
+  // Allow pressing Enter in the project name input to save
+  document.getElementById("new-project-name").addEventListener("keyup", (e) => {
+    if (e.key === "Enter") addProject();
+  });
+
+  // Listener for "Home" categories (All Tasks, Today, etc.)
+  document.querySelector(".nav-list").addEventListener("click", (e) => {
+    if (e.target.tagName === "LI") {
+      // Logic for filtering by date would go here
+      // For now, it highlights and switches to the 'All Tasks' view
+      renderAll();
+    }
+  });
+}
 
 // ============================================================
 // START THE APP
