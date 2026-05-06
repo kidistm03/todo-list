@@ -51,13 +51,12 @@ todo-list/
 
 - Create, view, edit, delete **todos** with title, description, due date, priority, notes
 - Support for **multiple projects** — create and switch between them
-- **Color-coded priorities**: 🔴 High, 🟡 Medium, 🟢 Low
+- **Color-coded priorities**: High,Medium, Low
 - **Date formatting** with `date-fns` library
 - **Persistent data** with `localStorage`
 - **Responsive** — works on mobile and desktop
 - Bundled with **Webpack**
 
----
 
 ## 🛠 Tech Stack
 
