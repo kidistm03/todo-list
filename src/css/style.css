@@ -1,412 +1,116 @@
-/* =============================================
-   GLOBAL STYLES
-   ============================================= */
-
-/* Import a nice Google Font */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: 'Poppins', sans-serif;
-  background-color: #f0f2f5;
-  color: #333;
-}
-
-/* =============================================
-   HEADER
-   ============================================= */
-
+/* Update Header Colors */
 .header {
-  background-color: #4a6fa5;
-  color: white;
-  padding: 16px 24px;
-}
-
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-/* =============================================
-   APP LAYOUT: sidebar + main
-   Uses Flexbox — sidebar on left, main on right
-   ============================================= */
-
-.app-layout {
-  display: flex;
-  min-height: calc(100vh - 56px);
-}
-
-/* =============================================
-   SIDEBAR (Left panel - Projects list)
-   ============================================= */
-
-.sidebar {
-  width: 260px;
-  background-color: #fff;
-  padding: 20px;
-  border-right: 1px solid #ddd;
-  flex-shrink: 0; /* Don't let it shrink */
-}
-
-.sidebar h2 {
-  font-size: 1rem;
-  color: #4a6fa5;
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* The list of project names */
-#project-list {
-  list-style: none;
-  margin-bottom: 16px;
-}
-
-#project-list li {
+  background-color: #ffffff; /* White background as seen in image */
+  color: #333;
+  padding: 10px 24px;
+  border-bottom: 2px solid #27ae60; /* Green accent line */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  border-radius: 8px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #27ae60;
+}
+
+/* Theme Toggle Switch (Dark/Light Mode) */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.theme-switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+  position: absolute;
   cursor: pointer;
-  margin-bottom: 4px;
-  font-size: 0.9rem;
-  transition: background 0.2s;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
 }
 
-#project-list li:hover {
-  background-color: #eef2f9;
+input:checked + .slider { background-color: #27ae60; }
+.nav-section h2, .projects-section h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 20px 0 10px 0;
+  color: #2c3e50;
 }
 
-/* The currently selected project is highlighted */
-#project-list li.active {
-  background-color: #4a6fa5;
-  color: white;
-}
-
-/* Small delete button inside each project item */
-#project-list li .delete-project-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #aaa;
-  font-size: 1rem;
-  padding: 0 4px;
-}
-
-#project-list li.active .delete-project-btn {
-  color: #cce;
-}
-
-#project-list li .delete-project-btn:hover {
-  color: #e55;
-}
-
-/* Add new project button */
-#add-project-btn {
-  width: 100%;
-  padding: 10px;
-  background-color: #eef2f9;
-  border: 2px dashed #4a6fa5;
-  border-radius: 8px;
-  color: #4a6fa5;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-#add-project-btn:hover {
-  background-color: #dde6f5;
-}
-
-/* The new project form inputs */
-#new-project-form {
-  margin-top: 12px;
-}
-
-#new-project-form input {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-family: 'Poppins', sans-serif;
-  margin-bottom: 8px;
-}
-
-#new-project-form button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: 'Poppins', sans-serif;
-  margin-right: 6px;
-}
-
-#save-project-btn {
-  background-color: #4a6fa5;
-  color: white;
-}
-
-#cancel-project-btn {
-  background-color: #eee;
-}
-
-/* =============================================
-   MAIN CONTENT (Right panel - Todos)
-   ============================================= */
-
-.main-content {
-  flex: 1; /* Take up remaining space */
-  padding: 24px;
-  max-width: 800px;
-}
-
-.main-content h2 {
-  font-size: 1.4rem;
-  margin-bottom: 16px;
-  color: #333;
-}
-
-/* Button to add a todo */
-#add-todo-btn {
-  padding: 10px 20px;
-  background-color: #4a6fa5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  cursor: pointer;
+#default-categories {
+  list-style: none;
   margin-bottom: 20px;
-  transition: background 0.2s;
+}
+
+#default-categories li {
+  padding: 12px;
+  margin: 5px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+#default-categories li:hover {
+  background-color: #f0f0f0;
+}
+
+#default-categories li.active {
+  background-color: #a8e6cf; /* Light green highlight as seen in image */
+  color: #1b5e20;
+  font-weight: 600;
+}
+.content-header {
+  background-color: #27ae60;
+  color: white;
+  padding: 40px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.content-header h2 {
+  font-size: 2.5rem;
+  margin: 0;
+  color: white;
+}
+
+#add-todo-btn {
+  background-color: white;
+  color: #27ae60;
+  font-weight: 600;
+  border: 2px solid white;
 }
 
 #add-todo-btn:hover {
-  background-color: #3a5a8f;
-}
-
-/* =============================================
-   TODO ITEMS
-   ============================================= */
-
-/* A single todo card */
-.todo-item {
-  background-color: white;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  border-left: 5px solid #ccc; /* Color changes based on priority */
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-  transition: box-shadow 0.2s;
-}
-
-.todo-item:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-/* Priority border colors */
-.todo-item.priority-high   { border-left-color: #e74c3c; } /* Red */
-.todo-item.priority-medium { border-left-color: #f39c12; } /* Yellow/Orange */
-.todo-item.priority-low    { border-left-color: #27ae60; } /* Green */
-
-/* Todo header: title + buttons in a row */
-.todo-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.todo-header h3 {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-/* "Completed" style: strike through title */
-.todo-item.done .todo-header h3 {
-  text-decoration: line-through;
-  color: #aaa;
-}
-
-/* Due date text below the title */
-.todo-due {
-  font-size: 0.8rem;
-  color: #888;
-  margin-top: 4px;
-}
-
-/* Priority badge */
-.todo-priority-badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-  margin-top: 6px;
-  display: inline-block;
-}
-
-.badge-high   { background: #fde8e8; color: #e74c3c; }
-.badge-medium { background: #fef6e4; color: #f39c12; }
-.badge-low    { background: #e8f8f0; color: #27ae60; }
-
-/* Expanded detail area (hidden by default) */
-.todo-details {
-  margin-top: 10px;
-  font-size: 0.88rem;
-  color: #555;
-  border-top: 1px solid #f0f0f0;
-  padding-top: 10px;
-  display: none; /* Shown when expanded */
-}
-
-.todo-details p {
-  margin-bottom: 6px;
-}
-
-/* Action buttons on each todo */
-.todo-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.todo-actions button {
-  padding: 5px 10px;
-  border: none;
-  border-radius: 6px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.btn-expand { background: #eef2f9; color: #4a6fa5; }
-.btn-done   { background: #e8f8f0; color: #27ae60; }
-.btn-edit   { background: #fff8e1; color: #f39c12; }
-.btn-delete { background: #fde8e8; color: #e74c3c; }
-
-.todo-actions button:hover {
-  opacity: 0.8;
-}
-
-/* =============================================
-   ADD / EDIT TODO FORM
-   ============================================= */
-
-#todo-form-container {
-  background-color: white;
-  border-radius: 10px;
-  padding: 24px;
-  margin-top: 16px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-
-#todo-form-container h3 {
-  margin-bottom: 16px;
-  color: #4a6fa5;
-}
-
-/* Labels above inputs */
-#todo-form-container label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 500;
-  margin-bottom: 4px;
-  margin-top: 12px;
-  color: #555;
-}
-
-/* All form inputs and textareas */
-#todo-form-container input,
-#todo-form-container select,
-#todo-form-container textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-#todo-form-container input:focus,
-#todo-form-container select:focus,
-#todo-form-container textarea:focus {
-  border-color: #4a6fa5;
-}
-
-#todo-form-container textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* Form save/cancel buttons */
-.form-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-#save-todo-btn {
-  padding: 10px 24px;
-  background-color: #4a6fa5;
+  background-color: transparent;
   color: white;
-  border: none;
-  border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  cursor: pointer;
 }
-
-#cancel-todo-btn {
-  padding: 10px 24px;
-  background-color: #eee;
-  border: none;
-  border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-/* Empty state message */
-.empty-message {
-  color: #aaa;
-  font-size: 0.9rem;
-  margin-top: 10px;
-}
-
-/* =============================================
-   UTILITY
-   ============================================= */
-
-/* Hide any element with the "hidden" class */
-.hidden {
-  display: none !important;
-}
-
-/* =============================================
-   RESPONSIVE DESIGN
-   On mobile, stack sidebar on top of content
-   ============================================= */
-
 @media (max-width: 640px) {
-  .app-layout {
-    flex-direction: column; /* Stack vertically */
+  #sidebar {
+    position: fixed;
+    left: -260px; /* Hide off-screen */
+    top: 56px;
+    height: 100%;
+    z-index: 100;
+    transition: 0.3s;
   }
 
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #ddd;
+  #sidebar.active {
+    left: 0; /* Slide in */
   }
 
-  .main-content {
-    padding: 16px;
+  .content-header h2 {
+    font-size: 1.5rem;
   }
 }
